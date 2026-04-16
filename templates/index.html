@@ -1,0 +1,805 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Dropship</title>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+
+<style>
+    /* ── Reset & Global Styles ── */
+    *, *::before, *::after { box-sizing: border-box; }
+
+    body {
+        margin: 0;
+        min-height: 100vh;
+        background: #c8cfd8;
+        font-family: 'IBM Plex Sans', sans-serif;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        padding: 48px 20px;
+    }
+
+    .top-bar {
+        width: 40px;
+        height: 3px;
+        background: #3a3a3a;
+        margin-bottom: 28px;
+    }
+
+    .container {
+        width: 95%;
+        max-width: 1200px;
+        box-shadow: 0 4px 24px rgba(0,0,0,0.15);
+    }
+
+    .nav {
+        display: flex;
+        align-items: flex-end;
+        gap: 4px;
+        padding: 0 8px;
+    }
+
+    /* ── Navigation Buttons ── */
+    .nav button {
+        background: #b0b8c2;
+        color: #4a4a4a;
+        border: none;
+        border-radius: 6px 6px 0 0;
+        padding: 10px 24px;
+        font-family: 'IBM Plex Sans', sans-serif;
+        font-weight: 500;
+        font-size: 13px;
+        letter-spacing: 0.03em;
+        cursor: pointer;
+        transition: background 0.15s, color 0.15s;
+        transform: translateY(1px);
+    }
+
+    .nav button:hover:not(.active):not(.account) {
+        background: #bdc5ce;
+        color: #222;
+    }
+
+    .nav button.active {
+        background: #f5f4f1;
+        color: #1a1a1a;
+        font-weight: 600;
+    }
+
+    .nav button.account {
+        margin-left: auto;
+        background: #3a3a3a;
+        color: #f5f4f1;
+        cursor: default;
+    }
+
+    .content-box {
+        background: #f5f4f1;
+        min-height: 700px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+
+    /* ── Home & About Content (Centered) ── */
+    .content-inner {
+        text-align: center;
+        animation: fadeIn 0.2s ease;
+    }
+
+    .content-inner h2 {
+        font-size: 28px;
+        font-weight: 600;
+        color: #1a1a1a;
+        margin: 0 0 6px 0;
+        letter-spacing: -0.01em;
+    }
+
+    .content-inner p {
+        font-size: 14px;
+        color: #888;
+        margin: 0;
+    }
+
+    @keyframes fadeIn {
+        from { opacity: 0; }
+        to   { opacity: 1; }
+    }
+
+    /* ── Catalogue: Product List ── */
+    .catalogue-list {
+        width: 100%;
+        padding: 24px;
+        display: flex;
+        flex-direction: column;
+        gap: 16px;
+        animation: fadeIn 0.2s ease;
+    }
+
+    .product-row {
+        display: flex;
+        background: #fff;
+        border: 1px solid #ddd;
+        cursor: pointer;
+        transition: box-shadow 0.15s, border-color 0.15s;
+    }
+
+    .product-row:hover {
+        box-shadow: 0 2px 12px rgba(0,0,0,0.1);
+        border-color: #aaa;
+    }
+
+    .product-img {
+        width: 200px;
+        min-height: 160px;
+        flex-shrink: 0;
+        background: #e2e5e9;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        overflow: hidden;
+    }
+
+    .product-img img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+    }
+
+    .product-img .img-placeholder {
+        font-size: 12px;
+        color: #999;
+        text-align: center;
+        padding: 12px;
+        line-height: 1.5;
+    }
+
+    .product-info {
+        padding: 18px 20px;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        gap: 6px;
+        flex: 1;
+    }
+
+    .product-info .product-name {
+        font-size: 15px;
+        font-weight: 600;
+        color: #1a1a1a;
+        margin: 0;
+    }
+
+    .product-info .product-desc {
+        font-size: 13px;
+        color: #666;
+        margin: 0;
+        line-height: 1.5;
+    }
+
+    .product-info .product-price {
+        font-size: 14px;
+        font-weight: 600;
+        color: #3a3a3a;
+        margin: 4px 0 0 0;
+    }
+
+    .product-arrow {
+        display: flex;
+        align-items: center;
+        padding: 0 18px;
+        color: #aaa;
+        font-size: 20px;
+    }
+
+    /* ── Product Detail Page ── */
+    .product-page {
+        width: 100%;
+        padding: 32px;
+        animation: fadeIn 0.2s ease;
+    }
+
+    .back-btn {
+        background: none;
+        border: none;
+        font-family: 'IBM Plex Sans', sans-serif;
+        font-size: 13px;
+        color: #666;
+        cursor: pointer;
+        padding: 0 0 20px 0;
+        display: flex;
+        align-items: center;
+        gap: 6px;
+    }
+
+    .back-btn:hover { color: #1a1a1a; }
+
+    .product-page-body {
+        display: flex;
+        gap: 32px;
+    }
+
+    .product-page-img {
+        width: 260px;
+        height: 260px;
+        flex-shrink: 0;
+        background: #e2e5e9;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        overflow: hidden;
+    }
+
+    .product-page-img img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+    }
+
+    .product-page-img .img-placeholder {
+        font-size: 12px;
+        color: #999;
+        text-align: center;
+        padding: 20px;
+        line-height: 1.6;
+    }
+
+    .product-page-details {
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+        gap: 12px;
+    }
+
+    .product-page-details h2 {
+        font-size: 22px;
+        font-weight: 600;
+        color: #1a1a1a;
+        margin: 0;
+    }
+
+    .page-price {
+        font-size: 18px;
+        font-weight: 600;
+        color: #3a3a3a;
+    }
+
+    .page-desc {
+        font-size: 14px;
+        color: #555;
+        line-height: 1.7;
+        margin: 0;
+    }
+
+    .page-divider {
+        border: none;
+        border-top: 1px solid #ddd;
+        margin: 4px 0;
+    }
+
+    .add-to-cart {
+        margin-top: 8px;
+        background: #3a3a3a;
+        color: #f5f4f1;
+        border: none;
+        padding: 12px 28px;
+        font-family: 'IBM Plex Sans', sans-serif;
+        font-size: 13px;
+        font-weight: 500;
+        letter-spacing: 0.04em;
+        cursor: pointer;
+        align-self: flex-start;
+        transition: background 0.15s;
+    }
+
+    .add-to-cart:hover { background: #222; }
+
+
+    /* ── Account Page ── */
+    .account-page {
+        width: 100%;
+        padding: 32px;
+        animation: fadeIn 0.2s ease;
+        display: flex;
+        justify-content: center;
+    }
+
+    #form-section {
+        width: 80%;
+        height: 100%;
+        margin-left: 10%;
+        background: #fff;
+        border: 1px solid #ddd;
+        padding: 24px;
+        display: flex;
+        flex-direction: column;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+        border-radius: 6px;
+    }
+
+    #form-section h2 {
+        font-size: 22px;
+        font-weight: 600;
+        color: #1a1a1a;
+        margin: 0 0 12px 0;
+    }
+
+    #form-section label {
+        font-size: 14px;
+        color: #555;
+        margin-bottom: 4px;
+        display: block;
+    }
+
+    #form-section input[type="text"],
+    #form-section input[type="password"] {
+        width: 100%;
+        padding: 10px 12px;
+        font-size: 14px;
+        border: 1px solid #ccc;
+        border-radius: 4px;
+        background: #f9f9f9;
+        transition: border-color 0.15s, box-shadow 0.15s;
+        font-family: 'IBM Plex Sans', sans-serif;
+    }
+
+    #form-section input[type="text"]:focus,
+    #form-section input[type="password"]:focus {
+        border-color: #3a3a3a;
+        box-shadow: 0 0 0 2px rgba(58,58,58,0.1);
+        outline: none;
+    }
+
+    #form-section .submit-btn {
+        margin-top: 12px;
+        background: #3a3a3a;
+        color: #f5f4f1;
+        border: none;
+        margin-top: 20px;
+        padding: 12px 20px;
+        font-size: 13px;
+        font-weight: 500;
+        letter-spacing: 0.04em;
+        cursor: pointer;
+        transition: background 0.15s;
+        border-radius: 4px;
+        align-self: flex-start;
+        font-family: 'IBM Plex Sans', sans-serif;
+    }
+
+    #form-section .submit-btn:hover {
+        background: #0b0b0b;
+    }
+    .signin-link {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: 10px;
+}
+
+.signin-link a {
+  font-size: 14px;
+  color: #007bff;
+  text-decoration: none;
+}
+
+.signin-link a:hover {
+  text-decoration: underline;
+}
+.account-menu-wrapper {
+  position: relative;
+  margin-left: auto;
+  display: flex;
+  align-items: stretch;
+}
+
+.nav .account {
+  background: #3a3a3a;
+  color: white;
+  border: none;
+  border-radius: 8px 8px 0 0;
+  padding: 18px 34px;
+  font-weight: 700;
+  font-size: 18px;
+  cursor: pointer;
+}
+
+/* --- Dropdown animation ---*/
+.account-dropdown {
+  display: none;
+  position: absolute;
+  top: calc(100% + 10px);
+  right: 0;
+  min-width: 170px;
+  background: white;
+  border-radius: 10px;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.18);
+  z-index: 1000;
+  overflow: hidden;
+  padding: 8px 0;
+}
+
+.account-dropdown::before {
+  content: "";
+  position: absolute;
+  top: -10px;
+  right: 28px;
+  border-left: 10px solid transparent;
+  border-right: 10px solid transparent;
+  border-bottom: 10px solid white;
+}
+
+.account-dropdown a {
+  display: block;
+  padding: 12px 18px;
+  text-decoration: none;
+  color: #444;
+  font-size: 16px;
+  background: white;
+}
+
+.account-dropdown a:hover {
+  background: #f5f5f5;
+}
+
+
+</style>
+</head>
+
+<body>
+
+<div class="top-bar"></div>
+
+<div class="container">
+    <div class="nav">
+        <button class="home active" onclick="swapContent('home', this)">Home</button>
+        <button class="catalogue" onclick="swapContent('catalogue', this)">Catalogue</button>
+        <button class="about" onclick="swapContent('about', this)">About</button>
+        <button class="cart" onclick="swapContent('cart', this)">Cart</button>
+          
+            
+            <div class="account-menu-wrapper">
+              <button class="account" tabindex="-1" onclick="toggleAccountMenu()">Account</button>
+              <div id="accountDropdown" class="account-dropdown">
+                <a href="#" onclick="swapContent('login', this); closeAccountMenu()">Log In</a>
+                <a href="#" onclick="swapContent('account', this); closeAccountMenu()">Sign Up</a>
+              </div>
+            </div>
+          </div>
+    
+    <div class="content-box">
+        <div id="mainContent" class="content-inner">
+            <h2>Home</h2>
+            <p>Welcome to Dropship</p>
+        </div>
+    </div>
+</div>
+
+<script>
+// ── Product Data: Edit name, price, description, and image ──
+const products = [
+    { id: 1, name: 'Product One', price: '$0.00', shortDesc: 'Placeholder', fullDesc: 'Placeholder', image: 'https://picsum.photos/id/1015/300/200' },
+    { id: 2, name: 'Product Two', price: '$0.00', shortDesc: 'Placeholder', fullDesc: 'Placeholder', image: 'https://picsum.photos/id/1016/300/200' },
+    { id: 3, name: 'Product Three', price: '$0.00', shortDesc: 'Placeholder', fullDesc: 'Placeholder', image: 'https://picsum.photos/id/1025/300/200' },
+    { id: 4, name: 'Product Four', price: '$0.00', shortDesc: 'Placeholder', fullDesc: 'Placeholder', image: 'https://picsum.photos/id/1035/300/200' },
+    { id: 5, name: 'Product Five', price: '$0.00', shortDesc: 'Placeholder', fullDesc: 'Placeholder', image: 'https://picsum.photos/id/1043/300/200' },
+];
+let cart = [];
+// ─────────────────────────────────────────────────────────
+
+// Return image tag or placeholder text
+function imgTag(image, placeholderText) {
+    if (image) return `<img src="${image}" alt="product image">`;
+    return `<div class="img-placeholder">${placeholderText}</div>`;
+}
+
+//Render: Build HTML for product list view
+function renderCatalogue() {
+    return `
+        <div class="catalogue-list">
+            ${products.map(p => `
+                <div class="product-row" onclick="openProduct(${p.id})">
+                    <div class="product-img">${imgTag(p.image, 'Image<br>coming soon')}</div>
+                    <div class="product-info">
+                        <p class="product-name">${p.name}</p>
+                        <p class="product-desc">${p.shortDesc}</p>
+                        <p class="product-price">${p.price}</p>
+                    </div>
+                    <div class="product-arrow">›</div>
+                </div>
+            `).join('')}
+        </div>
+    `;
+}
+
+//Render: Display individual product detail page
+function openProduct(id) {
+    const p = products.find(x => x.id === id);
+    const el = document.getElementById('mainContent');
+    el.className = '';
+    el.style.width = '100%';
+    el.innerHTML = `
+        <div class="product-page">
+            <button class="back-btn" onclick="backToCatalogue()">‹ Back to Catalogue</button>
+            <div class="product-page-body">
+                <div class="product-page-img">${imgTag(p.image, 'Your product<br>image here')}</div>
+                <div class="product-page-details">
+                    <h2>${p.name}</h2>
+                    <div class="page-price">${p.price}</div>
+                    <hr class="page-divider">
+                    <p class="page-desc">${p.fullDesc}</p>
+                    <button class="submit-btn" onclick="addToCart(${p.id})" >Add to Cart</button>
+                </div>
+            </div>
+        </div>
+    `;
+}
+
+function addToCart(id) {
+    const product = products.find(p => p.id === id);
+    if (!product) return;
+
+    const existing = cart.find(item => item.id === id);
+
+    if (existing) {
+        existing.quantity += 1;
+    } else {
+        cart.push({
+            id: product.id,
+            product_name: product.name,
+            price: parseFloat(product.price.replace('$', '')) || 0,
+            quantity: 1
+        });
+    }
+
+    alert(`${product.name} added to cart.`);
+}
+
+//account creation page 
+function renderAccount()
+{
+    return `
+    <div class ="account-page">
+        <div id="form-section">
+        <h2>Account Creation</h2>
+            <!-- Text Boxes -->
+            <label for="name">Full Name:</label>
+            <input type="text" id="name" name="name" required>
+
+            <label for="email">Email Address:</label>
+            <input type="text" id="email" name="email" required>
+
+            <label for="fPassword"> Password:</label>
+            <input type="password" id="fPassword" name="fPassword" required>
+
+            <label for="sPassword"> Verify Password:</label>
+            <input type="password" id="sPassword" name="sPassword" required>
+            
+            <button class="create account" onclick="createAccount()">Create Account</button>
+            <div class="signin-link">
+                <a href="#" onclick="swapContent('login', this)">Have an account? Sign in</a>
+                </div>
+            <p id="accountMessage"></p>
+        </div> 
+    </div>
+    `;
+}
+//log in page 
+function renderLogin() {
+    return `
+        <div class="account-page">
+            <div id="form-section">
+                <h2>Sign In</h2>
+
+                <label for="loginEmail">Email Address:</label>
+                <input type="text" id="loginEmail" name="loginEmail" required>
+
+                <label for="loginPassword">Password:</label>
+                <input type="password" id="loginPassword" name="loginPassword" required>
+
+                <button onclick="login()">Sign In</button>
+
+                <p id="loginMessage"></p>
+            </div>
+        </div>
+    `;
+}
+
+function renderCart() {
+    const cartItemsHtml = cart.length
+        ? cart.map(item => `
+            <div style="margin-bottom: 12px; padding: 10px; border: 1px solid #ddd; background: #fff;">
+                <strong>${item.product_name}</strong><br>
+                Price: $${item.price.toFixed(2)}<br>
+                Quantity: ${item.quantity}
+            </div>
+        `).join('')
+        : `<p>Your cart is empty.</p>`;
+
+    return `
+        <div class="account-page">
+            <div id="form-section">
+                <h2>Cart</h2>
+                ${cartItemsHtml}
+
+                <label for="deliveryAddress">Delivery Address:</label>
+                <input type="text" id="deliveryAddress" name="deliveryAddress" required>
+
+                <button class="submit-btn" onclick="checkout()">Checkout</button>
+                <p id="checkoutMessage"></p>
+            </div>
+        </div>
+    `;
+}
+
+
+// Navigation: Return to catalogue list view
+function backToCatalogue() {
+    const el = document.getElementById('mainContent');
+    el.className = '';
+    el.style.width = '100%';
+    el.innerHTML = renderCatalogue();
+}
+
+// Navigation: Handle tab switching (Home, Catalogue, About) ──
+function swapContent(section, btn) {
+    document.querySelectorAll('.nav button:not(.account)').forEach(b => b.classList.remove('active'));
+    if (btn && btn.classList) {
+        btn.classList.add('active');
+    }
+    const el = document.getElementById('mainContent');
+    if (section === 'catalogue') {
+    el.className = '';
+    el.style.width = '100%';
+    el.innerHTML = renderCatalogue();
+}
+else if (section === 'account') {
+    el.className = '';
+    el.style.width = '100%';
+    el.innerHTML = renderAccount();
+}
+else if (section === 'login') {
+    el.className = '';
+    el.style.width = '100%';
+    el.innerHTML = renderLogin();
+}
+else if (section === 'cart') {
+    el.className = '';
+    el.style.width = '100%';
+    el.innerHTML = renderCart();
+}
+else {
+    el.className = 'content-inner';
+    el.style.width = '';
+    const map = {
+        home: { title: 'Home', sub: 'Welcome to Dropship' },
+        about: { title: 'About', sub: 'Our story & mission' },
+    };
+    const { title, sub } = map[section];
+    el.innerHTML = `<h2>${title}</h2><p>${sub}</p>`;
+}
+}
+async function createAccount() {
+    const fullName = document.getElementById("name").value.trim();
+    const email = document.getElementById("email").value.trim();
+    const password = document.getElementById("fPassword").value;
+    const verifyPassword = document.getElementById("sPassword").value;
+    const messageEl = document.getElementById("accountMessage");
+
+    messageEl.textContent = "";
+    try {
+        const response = await fetch("/register", {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json"
+            },
+            body: JSON.stringify({
+                full_name: fullName,
+                email: email,
+                password: password,
+                verify_password: verifyPassword
+            })
+        });
+
+        const result = await response.json();
+        messageEl.textContent = result.message;
+
+    } catch (error) {
+        messageEl.textContent = "Server connection failed.";
+    }
+}
+//Login  function
+async function login() {
+    const email = document.getElementById("loginEmail").value.trim();
+    const password = document.getElementById("loginPassword").value;
+    const messageEl = document.getElementById("loginMessage");
+
+    messageEl.textContent = "";
+
+    try {
+        const response = await fetch("/login", {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json"
+            },
+            body: JSON.stringify({
+                email: email,
+                password: password
+            })
+        });
+
+        const result = await response.json();
+        messageEl.textContent = result.message;
+
+        if (result.success) {
+            localStorage.setItem("currentUser", JSON.stringify(result.user));
+            setTimeout(() => {
+                swapContent('home', document.querySelector('.home'));
+            }, 500);
+        }
+    } catch (error) {
+        messageEl.textContent = "Server connection failed.";
+    }
+}
+//Checkout function
+async function checkout() {
+    const currentUser = JSON.parse(localStorage.getItem("currentUser"));
+    const deliveryAddress = document.getElementById("deliveryAddress").value.trim();
+    const messageEl = document.getElementById("checkoutMessage");
+
+    if (!currentUser) {
+        messageEl.textContent = "Please log in first.";
+        return;
+    }
+
+    if (cart.length === 0) {
+        messageEl.textContent = "Your cart is empty.";
+        return;
+    }
+
+    if (!deliveryAddress) {
+        messageEl.textContent = "Please enter a delivery address.";
+        return;
+    }
+
+    try {
+        const response = await fetch("/checkout", {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json"
+            },
+            body: JSON.stringify({
+                user_id: currentUser.id,
+                delivery_address: deliveryAddress,
+                items: cart
+            })
+        });
+
+        const result = await response.json();
+        messageEl.textContent = result.message;
+
+        if (result.success) {
+            cart = [];
+            setTimeout(() => {
+                swapContent('cart', document.querySelector('.cart'));
+            }, 500);
+        }
+
+    } catch (error) {
+        messageEl.textContent = "Server connection failed.";
+    }
+}
+//shows and hides dropdown when hoving away tab
+function toggleAccountMenu() {
+    const menu = document.getElementById('accountDropdown');
+    menu.style.display = (menu.style.display === 'block') ? 'none' : 'block';
+}
+
+function closeAccountMenu() {
+    document.getElementById('accountDropdown').style.display = 'none';
+}
+
+</script>
+
+</body>
+</html>
