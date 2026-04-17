@@ -67,6 +67,7 @@ def home():
 @app.route("/register", methods=["POST"])
 def register():
     data = request.get_json()
+    print("REGISTER DATA:", data)
 
     full_name = data.get("full_name", "").strip()
     email = data.get("email", "").strip().lower()
@@ -101,10 +102,12 @@ def register():
 
         return jsonify({"success": True, "message": "Account created successfully."}), 201
 
-    except sqlite3.IntegrityError:
+    except sqlite3.IntegrityError as e:
+        print("REGISTER INTEGRITY ERROR:", e)
         return jsonify({"success": False, "message": "Email already exists."}), 400
 
-    except Exception:
+    except Exception as e:
+        print("REGISTER SERVER ERROR:", e)
         return jsonify({"success": False, "message": "Server error."}), 500
 
 
