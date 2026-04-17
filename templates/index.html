@@ -687,6 +687,7 @@ async function createAccount() {
     const messageEl = document.getElementById("accountMessage");
 
     messageEl.textContent = "";
+
     try {
         const response = await fetch("/register", {
             method: "POST",
@@ -702,10 +703,11 @@ async function createAccount() {
         });
 
         const result = await response.json();
-        messageEl.textContent = result.message;
+        messageEl.textContent = result.message || "Request completed.";
 
     } catch (error) {
-        messageEl.textContent = "Server connection failed.";
+        console.error("Register request failed:", error);
+        messageEl.textContent = "Request failed. Check input or server.";
     }
 }
 //Login  function
