@@ -456,7 +456,7 @@
         <button class="catalogue" onclick="swapContent('catalogue', this)">Catalogue</button>
         <button class="about" onclick="swapContent('about', this)">About</button>
         <button class="cart" onclick="swapContent('cart', this)">Cart</button>
-          
+        <button class="orders" onclick="loadOrders()">Orders</button>  
             
             <div class="account-menu-wrapper">
               <button class="account" tabindex="-1" onclick="toggleAccountMenu()">Account</button>
@@ -632,6 +632,93 @@ function renderCart() {
     `;
 }
 
+function renderOrders(orders) {
+    if (!orders || orders.length === 0) {
+        return `
+            <div class="account-page">
+                <div id="form-section">
+                    <h2>Order History</h2>
+                    <p>No previous orders found.</p>
+                </div>
+            </div>
+        `;
+    }
+
+    return `
+        <div class="account-page">
+            <div id="form-section">
+                <h2>Order History</h2>
+                ${orders.map(order => `
+                    <div style="margin-bottom: 18px; padding: 14px; border: 1px solid #ddd; background: #fff;">
+                        <p><strong>Order ID:</strong> ${order.order_id}</p>
+                        <p><strong>Total:</strong> $${Number(order.total_amount).toFixed(2)}</p>
+                        <p><strong>Delivery Address:</strong> ${order.delivery_address}</p>
+                        <p><strong>Status:</strong> ${order.payment_status}</p>
+                        <p><strong>Date:</strong> ${order.created_at}</p>
+
+                        <div style="margin-top: 10px;">
+                            <strong>Items:</strong>
+                            <ul style="margin-top: 8px; padding-left: 20px;">
+                                ${order.items.map(item => `
+                                    <li>
+                                        ${item.product_name} — Qty: ${item.quantity} — $${Number(item.price).toFixed(2)}
+                                    </li>
+                                `).join('')}
+                            </ul>
+                        </div>
+                    </div>
+                `).join('')}
+                <p id="ordersMessage"></p>
+            </div>
+        </div>
+    `;
+}
+
+async function loadOrders() {
+    const currentUser = JSON.parse(localStorage.getItem("currentUser"));
+    const el = document.getElementById("mainContent");
+
+    document.querySelectorAll('.nav button:not(.account)').forEach(b => b.classList.remove('active'));
+    const ordersBtn = document.querySelector('.orders');
+    if (ordersBtn) {
+        ordersBtn.classList.add('active');
+    }
+
+    if (!currentUser) {
+        el.className = '';
+        el.style.width = '100%';
+        el.innerHTML = `
+            <div class="account-page">
+                <div id="form-section">
+                    <h2>Order History</h2>
+                    <p>Please log in first to view your orders.</p>
+                </div>
+            </div>
+        `;
+        return;
+    }
+
+    try {
+        const response = await fetch(`/orders/${currentUser.id}`);
+        const result = await response.json();
+
+        el.className = '';
+        el.style.width = '100%';
+        el.innerHTML = renderOrders(result.orders || []);
+
+    } catch (error) {
+        el.className = '';
+        el.style.width = '100%';
+        el.innerHTML = `
+            <div class="account-page">
+                <div id="form-section">
+                    <h2>Order History</h2>
+                    <p>Could not load order history.</p>
+                </div>
+            </div>
+        `;
+    }
+}
 
 // Navigation: Return to catalogue list view
 function backToCatalogue() {
@@ -687,7 +774,6 @@ async function createAccount() {
     const messageEl = document.getElementById("accountMessage");
 
     messageEl.textContent = "";
-
     try {
         const response = await fetch("/register", {
             method: "POST",
@@ -703,11 +789,10 @@ async function createAccount() {
         });
 
         const result = await response.json();
-        messageEl.textContent = result.message || "Request completed.";
+        messageEl.textContent = result.message;
 
     } catch (error) {
-        console.error("Register request failed:", error);
-        messageEl.textContent = "Request failed. Check input or server.";
+        messageEl.textContent = "Server connection failed.";
     }
 }
 //Login  function
@@ -724,25 +809,65 @@ async function login() {
             headers: {
                 "Content-Type": "application/json"
             },
-            body: JSON.stringify({
-                email: email,
-                password: password
-            })
+            body: JSON.stringify({ email, password })
         });
 
-        const result = await response.json();
+        const result = await response.json(); 
+
         messageEl.textContent = result.message;
+
+       
+        if (result.mfa_required) {
+            const token = result.mfa_token;
+
+            messageEl.textContent = "Check your email to complete login...";
+
+            const interval = setInterval(async () => {
+                const res = await fetch("/mfa/status", {
+                    method: "POST",
+                    headers: {"Content-Type": "application/json"},
+                    body: JSON.stringify({ mfa_token: token })
+                });
+
+                const data = await res.json();
+
+                if (data.status === "SUCCESS") {
+                    clearInterval(interval); 
+                    // store session if returned
+                    if (data.session) {
+                        localStorage.setItem("session", data.session);
+                    }
+
+                    messageEl.textContent = "Login complete!";
+
+                    setTimeout(() => {
+                        swapContent('home', document.querySelector('.home'));
+                    }, 500);
+                }
+
+                if (data.status === "EXPIRED") {
+                    clearInterval(interval);
+                    messageEl.textContent = "MFA expired. Please login again.";
+                }
+
+            }, 3000);
+
+            return; 
+        }
 
         if (result.success) {
             localStorage.setItem("currentUser", JSON.stringify(result.user));
+
             setTimeout(() => {
                 swapContent('home', document.querySelector('.home'));
             }, 500);
         }
+
     } catch (error) {
         messageEl.textContent = "Server connection failed.";
     }
 }
+
 //Checkout function
 async function checkout() {
     const currentUser = JSON.parse(localStorage.getItem("currentUser"));
@@ -783,7 +908,7 @@ async function checkout() {
         if (result.success) {
             cart = [];
             setTimeout(() => {
-                swapContent('cart', document.querySelector('.cart'));
+                loadOrders();
             }, 500);
         }
 
