@@ -125,7 +125,7 @@ def verify_mfa():
 @app.route("/mfa/status" , methods=["POST"])
 def mfa_status():
     data = request.get_json()
-    token = data.get("token")
+    token = data.get("mfa_token")
     conn = get_db_connection()
     cursor = conn.cursor()
     cursor.execute("SELECT uid, expires,verified FROM mfa WHERE token = ?", (token,))
@@ -137,7 +137,7 @@ def mfa_status():
     if not record["verified"]:
         return jsonify({"status": "PENDING"}), 200
     
-    if time.time > record["expires"]:
+    if time.time() > record["expires"]:
         return jsonify({"status": "EXPIRED"}), 400
 
     # cleanup
@@ -163,13 +163,13 @@ def verify_email():
         conn = sqlite3.connect(DB_NAME)
         cursor = conn.cursor()
 
-        cursor.execute("SELECT id FROM users WHERE token = ?", (token))
+        cursor.execute("SELECT id FROM users WHERE token = ?", (token,))
         user = cursor.fetchone()
 
         if not user:
             return jsonify({"success": False, "message": "Invalid verification link."}), 400
 
-        cursor.execute("UPDATE users SET token = NULL WHERE id = ?", (id))
+        cursor.execute("UPDATE users SET token = NULL WHERE id = ?", (user[0],))
         conn.commit()
         conn.close()
 
@@ -250,7 +250,7 @@ def login():
         cursor = conn.cursor()
 
         cursor.execute("""
-            SELECT id, full_name, email, password_hash
+            SELECT id, full_name, email, password_hash, token
             FROM users
             WHERE email = ?
         """, (email,))
@@ -271,7 +271,7 @@ def login():
             with smtplib.SMTP("smtp.gmail.com", 587) as server:
                 server.starttls()
                 server.login(Website_Email, Website_Email_Password)
-                server.sendmail(Website_Email, email, f"Subject: Email Verification\n\nClick the link to verify your email: {Website_URL}mfa/verify?token={mfa}")
+                server.sendmail(Website_Email, email, f"Subject: Email Verification\n\nClick the link to complete MFA: {Website_URL}/mfa/verify?token={mfa}")
         except Exception as e:
                 print(f"Error sending verification email: {e}")
         
@@ -386,7 +386,7 @@ def get_orders(user_id):
     except Exception:
         return jsonify({"success": False, "message": "Server error."}), 500
 
+init_db()
 
 if __name__ == "__main__":
-    init_db()
     app.run(debug=True)
