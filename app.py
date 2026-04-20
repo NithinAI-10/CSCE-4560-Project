@@ -212,6 +212,7 @@ def register():
                 email,
                 f"Subject: Email Verification\n\nClick the link to verify your email: {Website_URL}/verify?token={token}"
             )
+            print("Verification email sent successfully")
     except Exception as e:
         print(f"REGISTER email error: {e}")
         return jsonify({"success": False, "message": "Could not send verification email."}), 500
