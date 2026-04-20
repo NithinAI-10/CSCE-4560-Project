@@ -7,10 +7,9 @@ import time
 import secrets
 import os
 
-Website_Email = os.getenv("WEBSITE_EMAIL", "dropshipcsce4560@gmail.com") #email address for sending verification email  need to put this and other in env variables but can't get access to flask so hardcoding doesn't really matter much cause only a couple of of people can acess the gitlab
-Website_URL = os.getenv("WEBSITE_URL", "https://csce-4560-project.onrender.com") #website URL for email verification link
-Website_Email_Password = os.getenv("WEBSITE_EMAIL_PASSWORD") #email password for sending verification email can only be used through an application and not through google login 
-
+Website_Email = os.getenv("WEBSITE_EMAIL", "dropshipcsce4560@gmail.com")
+Website_URL = os.getenv("WEBSITE_URL", "https://csce-4560-project.onrender.com")
+Website_Email_Password = os.getenv("WEBSITE_EMAIL_PASSWORD")
 
 app = Flask(__name__)
 
@@ -33,19 +32,19 @@ def init_db():
             full_name TEXT NOT NULL,
             email TEXT NOT NULL UNIQUE,
             password_hash TEXT NOT NULL,
-            token TEXT NOT NULL
+            token TEXT
         )
     """)
 
-    cursor.execute(""" 
+    cursor.execute("""
         CREATE TABLE IF NOT EXISTS mfa (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             uid INTEGER NOT NULL,
             token TEXT NOT NULL,
             expires REAL NOT NULL,
-            verified INTEGER DEFAULT 0 
+            verified INTEGER DEFAULT 0
         )
-     """)
+    """)
 
     cursor.execute("""
         CREATE TABLE IF NOT EXISTS orders (
@@ -73,15 +72,16 @@ def init_db():
     conn.commit()
     conn.close()
 
+
 def create_mfa_token(user_id):
     token = secrets.token_urlsafe(32)
-    expires = time.time() + 300  # 5 min
+    expires = time.time() + 300  # 5 minutes
     conn = get_db_connection()
     cursor = conn.cursor()
     cursor.execute("""
         INSERT INTO mfa (uid, token, expires)
-        VALUES (?,?,?)
-    """, (user_id,token,expires))
+        VALUES (?, ?, ?)
+    """, (user_id, token, expires))
     conn.commit()
     conn.close()
     return token
@@ -100,59 +100,58 @@ def home():
 @app.route("/mfa/verify", methods=["GET"])
 def verify_mfa():
     token = request.args.get("token")
-    conn  = get_db_connection()
+    conn = get_db_connection()
     cursor = conn.cursor()
     cursor.execute("SELECT uid, expires FROM mfa WHERE token = ?", (token,))
     record = cursor.fetchone()
 
     if not record:
+        conn.close()
         return "Invalid token", 400
-    
 
     if time.time() > record["expires"]:
+        conn.close()
         return "Token expired", 400
-    
-    cursor.execute(
-        "UPDATE mfa SET verified = 1 WHERE token = ?",
-        (token,)
-    )
 
+    cursor.execute("UPDATE mfa SET verified = 1 WHERE token = ?", (token,))
     conn.commit()
     conn.close()
 
     return "MFA verified. You can return to the app."
 
-@app.route("/mfa/status" , methods=["POST"])
+
+@app.route("/mfa/status", methods=["POST"])
 def mfa_status():
     data = request.get_json()
     token = data.get("mfa_token")
+
     conn = get_db_connection()
     cursor = conn.cursor()
-    cursor.execute("SELECT uid, expires,verified FROM mfa WHERE token = ?", (token,))
+    cursor.execute("SELECT uid, expires, verified FROM mfa WHERE token = ?", (token,))
     record = cursor.fetchone()
 
     if not record:
+        conn.close()
         return jsonify({"success": False}), 400
 
     if not record["verified"]:
+        conn.close()
         return jsonify({"status": "PENDING"}), 200
-    
+
     if time.time() > record["expires"]:
+        conn.close()
         return jsonify({"status": "EXPIRED"}), 400
 
-    # cleanup
     cursor.execute("DELETE FROM mfa WHERE token = ?", (token,))
     conn.commit()
     conn.close()
 
     return jsonify({
         "status": "SUCCESS",
+        "user_id": record["uid"]
     }), 200
-    
 
 
-
-    
 @app.route("/verify")
 def verify_email():
     token = request.args.get("token")
@@ -160,16 +159,17 @@ def verify_email():
         return jsonify({"success": False, "message": "Invalid verification link."}), 400
 
     try:
-        conn = sqlite3.connect(DB_NAME)
+        conn = get_db_connection()
         cursor = conn.cursor()
 
         cursor.execute("SELECT id FROM users WHERE token = ?", (token,))
         user = cursor.fetchone()
 
         if not user:
+            conn.close()
             return jsonify({"success": False, "message": "Invalid verification link."}), 400
 
-        cursor.execute("UPDATE users SET token = NULL WHERE id = ?", (user[0],))
+        cursor.execute("UPDATE users SET token = NULL WHERE id = ?", (user["id"],))
         conn.commit()
         conn.close()
 
@@ -178,7 +178,6 @@ def verify_email():
     except Exception as e:
         print(f"Error verifying email: {e}")
         return jsonify({"success": False, "message": "Server error."}), 500
-
 
 
 @app.route("/register", methods=["POST"])
@@ -201,16 +200,21 @@ def register():
 
     if len(password) < 8:
         return jsonify({"success": False, "message": "Password must be at least 8 characters."}), 400
-    
-     # setting up email to send along with the verification token
-    token = secrets.token_hex(16) #email verification token 
+
+    token = secrets.token_hex(16)
+
     try:
         with smtplib.SMTP("smtp.gmail.com", 587) as server:
             server.starttls()
             server.login(Website_Email, Website_Email_Password)
-            server.sendmail(Website_Email, email, f"Subject: Email Verification\n\nClick the link to verify your email: {Website_URL}/verify?token={token}")
+            server.sendmail(
+                Website_Email,
+                email,
+                f"Subject: Email Verification\n\nClick the link to verify your email: {Website_URL}/verify?token={token}"
+            )
     except Exception as e:
-        print(f"Error sending verification email: {e}")
+        print(f"REGISTER email error: {e}")
+        return jsonify({"success": False, "message": "Could not send verification email."}), 500
 
     password_hash = generate_password_hash(password, method="pbkdf2:sha256")
 
@@ -219,9 +223,9 @@ def register():
         cursor = conn.cursor()
 
         cursor.execute("""
-            INSERT INTO users (full_name, email, password_hash , token)
+            INSERT INTO users (full_name, email, password_hash, token)
             VALUES (?, ?, ?, ?)
-        """, (full_name, email, password_hash,token))
+        """, (full_name, email, password_hash, token))
 
         conn.commit()
         conn.close()
@@ -231,7 +235,8 @@ def register():
     except sqlite3.IntegrityError:
         return jsonify({"success": False, "message": "Email already exists."}), 400
 
-    except Exception:
+    except Exception as e:
+        print(f"REGISTER error: {e}")
         return jsonify({"success": False, "message": "Server error."}), 500
 
 
@@ -244,7 +249,7 @@ def login():
 
     if not email or not password:
         return jsonify({"success": False, "message": "Email and password are required."}), 400
-    
+
     try:
         conn = get_db_connection()
         cursor = conn.cursor()
@@ -262,27 +267,34 @@ def login():
 
         if not check_password_hash(user["password_hash"], password):
             return jsonify({"success": False, "message": "Invalid email or password."}), 401
-        
+
         if user["token"] is not None:
-            return jsonify({"success" :False, "message": "Email not verified"}), 401
-    
+            return jsonify({"success": False, "message": "Email not verified"}), 401
+
         mfa = create_mfa_token(user["id"])
+
         try:
             with smtplib.SMTP("smtp.gmail.com", 587) as server:
                 server.starttls()
                 server.login(Website_Email, Website_Email_Password)
-                server.sendmail(Website_Email, email, f"Subject: Email Verification\n\nClick the link to complete MFA: {Website_URL}/mfa/verify?token={mfa}")
+                server.sendmail(
+                    Website_Email,
+                    email,
+                    f"Subject: MFA Verification\n\nClick the link to complete MFA: {Website_URL}/mfa/verify?token={mfa}"
+                )
         except Exception as e:
-                print(f"Error sending verification email: {e}")
-        
+            print(f"LOGIN MFA email error: {e}")
+            return jsonify({"success": False, "message": "Could not send MFA email."}), 500
+
         return jsonify({
             "success": True,
             "mfa_required": True,
             "mfa_token": mfa,
-            "message": "Check your email to complete login.",
+            "message": "Check your email to complete login."
         }), 200
 
-    except Exception:
+    except Exception as e:
+        print(f"LOGIN error: {e}")
         return jsonify({"success": False, "message": "Server error."}), 500
 
 
@@ -338,7 +350,8 @@ def checkout():
             "total_amount": total_amount
         }), 201
 
-    except Exception:
+    except Exception as e:
+        print(f"CHECKOUT error: {e}")
         return jsonify({"success": False, "message": "Server error."}), 500
 
 
@@ -383,8 +396,10 @@ def get_orders(user_id):
         conn.close()
         return jsonify({"success": True, "orders": result}), 200
 
-    except Exception:
+    except Exception as e:
+        print(f"ORDERS error: {e}")
         return jsonify({"success": False, "message": "Server error."}), 500
+
 
 init_db()
 
