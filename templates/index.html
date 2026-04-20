@@ -6,7 +6,6 @@
 <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600&display=swap" rel="stylesheet">
 
 <style>
-    /* ── Reset & Global Styles ── */
     *, *::before, *::after { box-sizing: border-box; }
 
     body {
@@ -40,7 +39,6 @@
         padding: 0 8px;
     }
 
-    /* ── Navigation Buttons ── */
     .nav button {
         background: #b0b8c2;
         color: #4a4a4a;
@@ -82,7 +80,6 @@
         justify-content: center;
     }
 
-    /* ── Home & About Content (Centered) ── */
     .content-inner {
         text-align: center;
         animation: fadeIn 0.2s ease;
@@ -107,7 +104,6 @@
         to   { opacity: 1; }
     }
 
-    /* ── Catalogue: Product List ── */
     .catalogue-list {
         width: 100%;
         padding: 24px;
@@ -193,7 +189,6 @@
         font-size: 20px;
     }
 
-    /* ── Product Detail Page ── */
     .product-page {
         width: 100%;
         padding: 32px;
@@ -295,8 +290,6 @@
 
     .add-to-cart:hover { background: #222; }
 
-
-    /* ── Account Page ── */
     .account-page {
         width: 100%;
         padding: 32px;
@@ -352,7 +345,6 @@
     }
 
     #form-section .submit-btn {
-        margin-top: 12px;
         background: #3a3a3a;
         color: #f5f4f1;
         border: none;
@@ -371,78 +363,77 @@
     #form-section .submit-btn:hover {
         background: #0b0b0b;
     }
+
     .signin-link {
-  display: flex;
-  justify-content: flex-end;
-  margin-top: 10px;
-}
+        display: flex;
+        justify-content: flex-end;
+        margin-top: 10px;
+    }
 
-.signin-link a {
-  font-size: 14px;
-  color: #007bff;
-  text-decoration: none;
-}
+    .signin-link a {
+        font-size: 14px;
+        color: #007bff;
+        text-decoration: none;
+    }
 
-.signin-link a:hover {
-  text-decoration: underline;
-}
-.account-menu-wrapper {
-  position: relative;
-  margin-left: auto;
-  display: flex;
-  align-items: stretch;
-}
+    .signin-link a:hover {
+        text-decoration: underline;
+    }
 
-.nav .account {
-  background: #3a3a3a;
-  color: white;
-  border: none;
-  border-radius: 8px 8px 0 0;
-  padding: 18px 34px;
-  font-weight: 700;
-  font-size: 18px;
-  cursor: pointer;
-}
+    .account-menu-wrapper {
+        position: relative;
+        margin-left: auto;
+        display: flex;
+        align-items: stretch;
+    }
 
-/* --- Dropdown animation ---*/
-.account-dropdown {
-  display: none;
-  position: absolute;
-  top: calc(100% + 10px);
-  right: 0;
-  min-width: 170px;
-  background: white;
-  border-radius: 10px;
-  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.18);
-  z-index: 1000;
-  overflow: hidden;
-  padding: 8px 0;
-}
+    .nav .account {
+        background: #3a3a3a;
+        color: white;
+        border: none;
+        border-radius: 8px 8px 0 0;
+        padding: 18px 34px;
+        font-weight: 700;
+        font-size: 18px;
+        cursor: pointer;
+    }
 
-.account-dropdown::before {
-  content: "";
-  position: absolute;
-  top: -10px;
-  right: 28px;
-  border-left: 10px solid transparent;
-  border-right: 10px solid transparent;
-  border-bottom: 10px solid white;
-}
+    .account-dropdown {
+        display: none;
+        position: absolute;
+        top: calc(100% + 10px);
+        right: 0;
+        min-width: 170px;
+        background: white;
+        border-radius: 10px;
+        box-shadow: 0 4px 14px rgba(0, 0, 0, 0.18);
+        z-index: 1000;
+        overflow: hidden;
+        padding: 8px 0;
+    }
 
-.account-dropdown a {
-  display: block;
-  padding: 12px 18px;
-  text-decoration: none;
-  color: #444;
-  font-size: 16px;
-  background: white;
-}
+    .account-dropdown::before {
+        content: "";
+        position: absolute;
+        top: -10px;
+        right: 28px;
+        border-left: 10px solid transparent;
+        border-right: 10px solid transparent;
+        border-bottom: 10px solid white;
+    }
 
-.account-dropdown a:hover {
-  background: #f5f5f5;
-}
+    .account-dropdown a {
+        display: block;
+        padding: 12px 18px;
+        text-decoration: none;
+        color: #444;
+        font-size: 16px;
+        background: white;
+    }
 
-
+    .account-dropdown a:hover {
+        background: #f5f5f5;
+    }
 </style>
 </head>
 
@@ -456,17 +447,18 @@
         <button class="catalogue" onclick="swapContent('catalogue', this)">Catalogue</button>
         <button class="about" onclick="swapContent('about', this)">About</button>
         <button class="cart" onclick="swapContent('cart', this)">Cart</button>
-        <button class="orders" onclick="loadOrders()">Orders</button>  
-            
-            <div class="account-menu-wrapper">
-              <button class="account" tabindex="-1" onclick="toggleAccountMenu()">Account</button>
-              <div id="accountDropdown" class="account-dropdown">
-                <a href="#" onclick="swapContent('login', this); closeAccountMenu()">Log In</a>
-                <a href="#" onclick="swapContent('account', this); closeAccountMenu()">Sign Up</a>
-              </div>
+        <button class="orders" onclick="loadOrders()">Orders</button>
+
+        <div class="account-menu-wrapper">
+            <button class="account" tabindex="-1" onclick="toggleAccountMenu()">Account</button>
+            <div id="accountDropdown" class="account-dropdown">
+                <a href="#" id="loginOption" onclick="swapContent('login'); closeAccountMenu(); return false;">Log In</a>
+                <a href="#" id="signupOption" onclick="swapContent('account'); closeAccountMenu(); return false;">Sign Up</a>
+                <a href="#" id="logoutOption" onclick="logout(); closeAccountMenu(); return false;" style="display:none;">Logout</a>
             </div>
-          </div>
-    
+        </div>
+    </div>
+
     <div class="content-box">
         <div id="mainContent" class="content-inner">
             <h2>Home</h2>
@@ -476,7 +468,6 @@
 </div>
 
 <script>
-// ── Product Data: Edit name, price, description, and image ──
 const products = [
     { id: 1, name: 'Product One', price: '$0.00', shortDesc: 'Placeholder', fullDesc: 'Placeholder', image: 'https://picsum.photos/id/1015/300/200' },
     { id: 2, name: 'Product Two', price: '$0.00', shortDesc: 'Placeholder', fullDesc: 'Placeholder', image: 'https://picsum.photos/id/1016/300/200' },
@@ -484,16 +475,14 @@ const products = [
     { id: 4, name: 'Product Four', price: '$0.00', shortDesc: 'Placeholder', fullDesc: 'Placeholder', image: 'https://picsum.photos/id/1035/300/200' },
     { id: 5, name: 'Product Five', price: '$0.00', shortDesc: 'Placeholder', fullDesc: 'Placeholder', image: 'https://picsum.photos/id/1043/300/200' },
 ];
-let cart = [];
-// ─────────────────────────────────────────────────────────
 
-// Return image tag or placeholder text
+let cart = [];
+
 function imgTag(image, placeholderText) {
     if (image) return `<img src="${image}" alt="product image">`;
     return `<div class="img-placeholder">${placeholderText}</div>`;
 }
 
-//Render: Build HTML for product list view
 function renderCatalogue() {
     return `
         <div class="catalogue-list">
@@ -512,7 +501,6 @@ function renderCatalogue() {
     `;
 }
 
-//Render: Display individual product detail page
 function openProduct(id) {
     const p = products.find(x => x.id === id);
     const el = document.getElementById('mainContent');
@@ -528,7 +516,7 @@ function openProduct(id) {
                     <div class="page-price">${p.price}</div>
                     <hr class="page-divider">
                     <p class="page-desc">${p.fullDesc}</p>
-                    <button class="submit-btn" onclick="addToCart(${p.id})" >Add to Cart</button>
+                    <button class="submit-btn" onclick="addToCart(${p.id})">Add to Cart</button>
                 </div>
             </div>
         </div>
@@ -555,36 +543,36 @@ function addToCart(id) {
     alert(`${product.name} added to cart.`);
 }
 
-//account creation page 
-function renderAccount()
-{
+function renderAccount() {
     return `
-    <div class ="account-page">
+    <div class="account-page">
         <div id="form-section">
-        <h2>Account Creation</h2>
-            <!-- Text Boxes -->
+            <h2>Account Creation</h2>
+
             <label for="name">Full Name:</label>
             <input type="text" id="name" name="name" required>
 
             <label for="email">Email Address:</label>
             <input type="text" id="email" name="email" required>
 
-            <label for="fPassword"> Password:</label>
+            <label for="fPassword">Password:</label>
             <input type="password" id="fPassword" name="fPassword" required>
 
-            <label for="sPassword"> Verify Password:</label>
+            <label for="sPassword">Verify Password:</label>
             <input type="password" id="sPassword" name="sPassword" required>
             
-            <button class="create account" onclick="createAccount()">Create Account</button>
+            <button class="submit-btn" onclick="createAccount()">Create Account</button>
+
             <div class="signin-link">
-                <a href="#" onclick="swapContent('login', this)">Have an account? Sign in</a>
-                </div>
+                <a href="#" onclick="swapContent('login'); return false;">Have an account? Sign in</a>
+            </div>
+
             <p id="accountMessage"></p>
         </div> 
     </div>
     `;
 }
-//log in page 
+
 function renderLogin() {
     return `
         <div class="account-page">
@@ -597,7 +585,7 @@ function renderLogin() {
                 <label for="loginPassword">Password:</label>
                 <input type="password" id="loginPassword" name="loginPassword" required>
 
-                <button onclick="login()">Sign In</button>
+                <button class="submit-btn" onclick="login()">Sign In</button>
 
                 <p id="loginMessage"></p>
             </div>
@@ -660,9 +648,7 @@ function renderOrders(orders) {
                             <strong>Items:</strong>
                             <ul style="margin-top: 8px; padding-left: 20px;">
                                 ${order.items.map(item => `
-                                    <li>
-                                        ${item.product_name} — Qty: ${item.quantity} — $${Number(item.price).toFixed(2)}
-                                    </li>
+                                    <li>${item.product_name} — Qty: ${item.quantity} — $${Number(item.price).toFixed(2)}</li>
                                 `).join('')}
                             </ul>
                         </div>
@@ -705,7 +691,6 @@ async function loadOrders() {
         el.className = '';
         el.style.width = '100%';
         el.innerHTML = renderOrders(result.orders || []);
-
     } catch (error) {
         el.className = '';
         el.style.width = '100%';
@@ -720,7 +705,6 @@ async function loadOrders() {
     }
 }
 
-// Navigation: Return to catalogue list view
 function backToCatalogue() {
     const el = document.getElementById('mainContent');
     el.className = '';
@@ -728,44 +712,50 @@ function backToCatalogue() {
     el.innerHTML = renderCatalogue();
 }
 
-// Navigation: Handle tab switching (Home, Catalogue, About) ──
+function getWelcomeMessage() {
+    const user = JSON.parse(localStorage.getItem("currentUser"));
+    if (user && user.full_name) {
+        return `Welcome back, ${user.full_name.split(" ")[0]}!`;
+    }
+    return "Welcome to Dropship";
+}
+
 function swapContent(section, btn) {
     document.querySelectorAll('.nav button:not(.account)').forEach(b => b.classList.remove('active'));
     if (btn && btn.classList) {
         btn.classList.add('active');
     }
+
     const el = document.getElementById('mainContent');
+
     if (section === 'catalogue') {
-    el.className = '';
-    el.style.width = '100%';
-    el.innerHTML = renderCatalogue();
+        el.className = '';
+        el.style.width = '100%';
+        el.innerHTML = renderCatalogue();
+    } else if (section === 'account') {
+        el.className = '';
+        el.style.width = '100%';
+        el.innerHTML = renderAccount();
+    } else if (section === 'login') {
+        el.className = '';
+        el.style.width = '100%';
+        el.innerHTML = renderLogin();
+    } else if (section === 'cart') {
+        el.className = '';
+        el.style.width = '100%';
+        el.innerHTML = renderCart();
+    } else {
+        el.className = 'content-inner';
+        el.style.width = '';
+        const map = {
+            home: { title: 'Home', sub: getWelcomeMessage() },
+            about: { title: 'About', sub: 'Our story & mission' },
+        };
+        const { title, sub } = map[section];
+        el.innerHTML = `<h2>${title}</h2><p>${sub}</p>`;
+    }
 }
-else if (section === 'account') {
-    el.className = '';
-    el.style.width = '100%';
-    el.innerHTML = renderAccount();
-}
-else if (section === 'login') {
-    el.className = '';
-    el.style.width = '100%';
-    el.innerHTML = renderLogin();
-}
-else if (section === 'cart') {
-    el.className = '';
-    el.style.width = '100%';
-    el.innerHTML = renderCart();
-}
-else {
-    el.className = 'content-inner';
-    el.style.width = '';
-    const map = {
-        home: { title: 'Home', sub: 'Welcome to Dropship' },
-        about: { title: 'About', sub: 'Our story & mission' },
-    };
-    const { title, sub } = map[section];
-    el.innerHTML = `<h2>${title}</h2><p>${sub}</p>`;
-}
-}
+
 async function createAccount() {
     const fullName = document.getElementById("name").value.trim();
     const email = document.getElementById("email").value.trim();
@@ -774,6 +764,7 @@ async function createAccount() {
     const messageEl = document.getElementById("accountMessage");
 
     messageEl.textContent = "";
+
     try {
         const response = await fetch("/register", {
             method: "POST",
@@ -790,12 +781,11 @@ async function createAccount() {
 
         const result = await response.json();
         messageEl.textContent = result.message;
-
     } catch (error) {
-        messageEl.textContent = "Server connection failed.";
+        messageEl.textContent = "Request failed. Check input or server.";
     }
 }
-//Login  function
+
 async function login() {
     const email = document.getElementById("loginEmail").value.trim();
     const password = document.getElementById("loginPassword").value;
@@ -812,32 +802,36 @@ async function login() {
             body: JSON.stringify({ email, password })
         });
 
-        const result = await response.json(); 
-
+        const result = await response.json();
         messageEl.textContent = result.message;
 
-       
         if (result.mfa_required) {
             const token = result.mfa_token;
+            localStorage.setItem("pendingLoginEmail", email);
 
             messageEl.textContent = "Check your email to complete login...";
 
             const interval = setInterval(async () => {
                 const res = await fetch("/mfa/status", {
                     method: "POST",
-                    headers: {"Content-Type": "application/json"},
+                    headers: { "Content-Type": "application/json" },
                     body: JSON.stringify({ mfa_token: token })
                 });
 
                 const data = await res.json();
 
                 if (data.status === "SUCCESS") {
-                    clearInterval(interval); 
-                    // store session if returned
-                    if (data.session) {
-                        localStorage.setItem("session", data.session);
-                    }
+                    clearInterval(interval);
 
+                    const pendingEmail = localStorage.getItem("pendingLoginEmail") || email;
+                    localStorage.setItem("currentUser", JSON.stringify({
+                        id: data.user_id || null,
+                        full_name: pendingEmail.split("@")[0],
+                        email: pendingEmail
+                    }));
+                    localStorage.removeItem("pendingLoginEmail");
+
+                    updateAccountUI();
                     messageEl.textContent = "Login complete!";
 
                     setTimeout(() => {
@@ -847,16 +841,17 @@ async function login() {
 
                 if (data.status === "EXPIRED") {
                     clearInterval(interval);
+                    localStorage.removeItem("pendingLoginEmail");
                     messageEl.textContent = "MFA expired. Please login again.";
                 }
-
             }, 3000);
 
-            return; 
+            return;
         }
 
         if (result.success) {
             localStorage.setItem("currentUser", JSON.stringify(result.user));
+            updateAccountUI();
 
             setTimeout(() => {
                 swapContent('home', document.querySelector('.home'));
@@ -868,7 +863,6 @@ async function login() {
     }
 }
 
-//Checkout function
 async function checkout() {
     const currentUser = JSON.parse(localStorage.getItem("currentUser"));
     const deliveryAddress = document.getElementById("deliveryAddress").value.trim();
@@ -916,7 +910,7 @@ async function checkout() {
         messageEl.textContent = "Server connection failed.";
     }
 }
-//shows and hides dropdown when hoving away tab
+
 function toggleAccountMenu() {
     const menu = document.getElementById('accountDropdown');
     menu.style.display = (menu.style.display === 'block') ? 'none' : 'block';
@@ -926,6 +920,37 @@ function closeAccountMenu() {
     document.getElementById('accountDropdown').style.display = 'none';
 }
 
+function logout() {
+    localStorage.removeItem("currentUser");
+    localStorage.removeItem("pendingLoginEmail");
+    updateAccountUI();
+    swapContent('home', document.querySelector('.home'));
+}
+
+function updateAccountUI() {
+    const user = JSON.parse(localStorage.getItem("currentUser"));
+
+    const loginOption = document.getElementById("loginOption");
+    const signupOption = document.getElementById("signupOption");
+    const logoutOption = document.getElementById("logoutOption");
+    const accountBtn = document.querySelector(".account");
+
+    if (user) {
+        loginOption.style.display = "none";
+        signupOption.style.display = "none";
+        logoutOption.style.display = "block";
+        accountBtn.textContent = user.full_name.split(" ")[0];
+    } else {
+        loginOption.style.display = "block";
+        signupOption.style.display = "block";
+        logoutOption.style.display = "none";
+        accountBtn.textContent = "Account";
+    }
+}
+
+window.onload = function() {
+    updateAccountUI();
+};
 </script>
 
 </body>
