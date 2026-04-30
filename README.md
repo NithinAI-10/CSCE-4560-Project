@@ -145,7 +145,9 @@ This is an academic project. The following are known gaps that would need to be 
 ## Contributors
 
 - **Nithin Arya Inturi** — [@NithinAI-10](https://github.com/NithinAI-10)
-- Team Members
+- **Ryan Contreras** — [@RyanContreras2539]
+- **Jesus D Barco** — [@AstrialTrinity]
+- **Catcher Jones** — [@CatcherJones]
 
 ---
 
