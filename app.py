@@ -1,4 +1,4 @@
-from flask import Flask, render_template, request, jsonify
+from flask import Flask, render_template, request, jsonify, session
 import sqlite3
 from werkzeug.security import generate_password_hash, check_password_hash
 import re
@@ -13,6 +13,10 @@ Website_Email_Password = os.getenv("WEBSITE_EMAIL_PASSWORD")
 
 app = Flask(__name__)
 
+# ✅ FIX 1: Secret key required for server-side sessions
+# Set SECRET_KEY as an environment variable in Render dashboard
+app.secret_key = os.getenv("SECRET_KEY", "dev-fallback-change-in-production")
+
 DB_NAME = "store.db"
 
 
@@ -25,7 +29,6 @@ def get_db_connection():
 def init_db():
     conn = get_db_connection()
     cursor = conn.cursor()
-
     cursor.execute("""
         CREATE TABLE IF NOT EXISTS users (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -35,7 +38,6 @@ def init_db():
             token TEXT
         )
     """)
-
     cursor.execute("""
         CREATE TABLE IF NOT EXISTS mfa (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -45,7 +47,6 @@ def init_db():
             verified INTEGER DEFAULT 0
         )
     """)
-
     cursor.execute("""
         CREATE TABLE IF NOT EXISTS orders (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -57,7 +58,6 @@ def init_db():
             FOREIGN KEY (user_id) REFERENCES users(id)
         )
     """)
-
     cursor.execute("""
         CREATE TABLE IF NOT EXISTS order_items (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -68,16 +68,18 @@ def init_db():
             FOREIGN KEY (order_id) REFERENCES orders(id)
         )
     """)
-
     conn.commit()
     conn.close()
 
 
 def create_mfa_token(user_id):
-    token = secrets.token_urlsafe(32)
-    expires = time.time() + 300  # 5 minutes
+    # ✅ Delete any old pending MFA tokens for this user before creating a new one
     conn = get_db_connection()
     cursor = conn.cursor()
+    cursor.execute("DELETE FROM mfa WHERE uid = ?", (user_id,))
+
+    token = secrets.token_urlsafe(32)
+    expires = time.time() + 300  # 5 minutes
     cursor.execute("""
         INSERT INTO mfa (uid, token, expires)
         VALUES (?, ?, ?)
@@ -90,6 +92,11 @@ def create_mfa_token(user_id):
 def valid_email(email):
     pattern = r'^[^@]+@[^@]+\.[^@]+$'
     return re.match(pattern, email) is not None
+
+
+# ✅ FIX 1: Helper to get the authenticated user from session
+def get_current_user():
+    return session.get("user_id")
 
 
 @app.route("/")
@@ -116,14 +123,16 @@ def verify_mfa():
     cursor.execute("UPDATE mfa SET verified = 1 WHERE token = ?", (token,))
     conn.commit()
     conn.close()
-
     return "MFA verified. You can return to the app."
 
 
+# ✅ FIX 2 & 3: Read MFA token from session, not from client body
 @app.route("/mfa/status", methods=["POST"])
 def mfa_status():
-    data = request.get_json()
-    token = data.get("mfa_token")
+    # Token comes from server-side session — never from the client
+    token = session.get("pending_mfa_token")
+    if not token:
+        return jsonify({"success": False, "message": "No MFA in progress."}), 400
 
     conn = get_db_connection()
     cursor = conn.cursor()
@@ -132,6 +141,7 @@ def mfa_status():
 
     if not record:
         conn.close()
+        session.pop("pending_mfa_token", None)
         return jsonify({"success": False}), 400
 
     if not record["verified"]:
@@ -140,11 +150,16 @@ def mfa_status():
 
     if time.time() > record["expires"]:
         conn.close()
+        session.pop("pending_mfa_token", None)
         return jsonify({"status": "EXPIRED"}), 400
 
     cursor.execute("DELETE FROM mfa WHERE token = ?", (token,))
     conn.commit()
     conn.close()
+
+    # ✅ Promote to full authenticated session
+    session.pop("pending_mfa_token", None)
+    session["user_id"] = record["uid"]
 
     return jsonify({
         "status": "SUCCESS",
@@ -161,7 +176,6 @@ def verify_email():
     try:
         conn = get_db_connection()
         cursor = conn.cursor()
-
         cursor.execute("SELECT id FROM users WHERE token = ?", (token,))
         user = cursor.fetchone()
 
@@ -172,7 +186,6 @@ def verify_email():
         cursor.execute("UPDATE users SET token = NULL WHERE id = ?", (user["id"],))
         conn.commit()
         conn.close()
-
         return jsonify({"success": True, "message": "Email verified successfully."}), 200
 
     except Exception as e:
@@ -183,7 +196,6 @@ def verify_email():
 @app.route("/register", methods=["POST"])
 def register():
     data = request.get_json()
-
     full_name = data.get("full_name", "").strip()
     email = data.get("email", "").strip().lower()
     password = data.get("password", "")
@@ -212,7 +224,7 @@ def register():
                 email,
                 f"Subject: Email Verification\n\nClick the link to verify your email: {Website_URL}/verify?token={token}"
             )
-            print("Verification email sent successfully")
+        print("Verification email sent successfully")
     except Exception as e:
         print(f"REGISTER email error: {e}")
         return jsonify({"success": False, "message": "Could not send verification email."}), 500
@@ -222,20 +234,16 @@ def register():
     try:
         conn = get_db_connection()
         cursor = conn.cursor()
-
         cursor.execute("""
             INSERT INTO users (full_name, email, password_hash, token)
             VALUES (?, ?, ?, ?)
         """, (full_name, email, password_hash, token))
-
         conn.commit()
         conn.close()
-
         return jsonify({"success": True, "message": "Account created successfully."}), 201
 
     except sqlite3.IntegrityError:
         return jsonify({"success": False, "message": "Email already exists."}), 400
-
     except Exception as e:
         print(f"REGISTER error: {e}")
         return jsonify({"success": False, "message": "Server error."}), 500
@@ -244,7 +252,6 @@ def register():
 @app.route("/login", methods=["POST"])
 def login():
     data = request.get_json()
-
     email = data.get("email", "").strip().lower()
     password = data.get("password", "")
 
@@ -254,7 +261,6 @@ def login():
     try:
         conn = get_db_connection()
         cursor = conn.cursor()
-
         cursor.execute("""
             SELECT id, full_name, email, password_hash, token
             FROM users
@@ -263,14 +269,13 @@ def login():
         user = cursor.fetchone()
         conn.close()
 
-        if not user:
-            return jsonify({"success": False, "message": "Invalid email or password."}), 401
-
-        if not check_password_hash(user["password_hash"], password):
+        # ✅ Use the same error message for both "no user" and "unverified"
+        # to prevent email enumeration
+        if not user or not check_password_hash(user["password_hash"], password):
             return jsonify({"success": False, "message": "Invalid email or password."}), 401
 
         if user["token"] is not None:
-            return jsonify({"success": False, "message": "Email not verified"}), 401
+            return jsonify({"success": False, "message": "Invalid email or password."}), 401
 
         mfa = create_mfa_token(user["id"])
 
@@ -287,10 +292,13 @@ def login():
             print(f"LOGIN MFA email error: {e}")
             return jsonify({"success": False, "message": "Could not send MFA email."}), 500
 
+        # ✅ FIX 3: Store MFA token in server-side session — never send to client
+        session["pending_mfa_token"] = mfa
+
         return jsonify({
             "success": True,
             "mfa_required": True,
-            "mfa_token": mfa,
+            # mfa_token is intentionally NOT returned here
             "message": "Check your email to complete login."
         }), 200
 
@@ -299,18 +307,21 @@ def login():
         return jsonify({"success": False, "message": "Server error."}), 500
 
 
+# ✅ FIX 1: Checkout now uses session user_id — client cannot spoof identity
 @app.route("/checkout", methods=["POST"])
 def checkout():
-    data = request.get_json()
+    user_id = get_current_user()
+    if not user_id:
+        return jsonify({"success": False, "message": "Not authenticated. Please log in."}), 401
 
-    user_id = data.get("user_id")
+    data = request.get_json()
     delivery_address = data.get("delivery_address", "").strip()
     items = data.get("items", [])
 
-    if not user_id or not delivery_address or not items:
+    if not delivery_address or not items:
         return jsonify({
             "success": False,
-            "message": "User, delivery address, and items are required."
+            "message": "Delivery address and items are required."
         }), 400
 
     try:
@@ -322,12 +333,10 @@ def checkout():
 
         conn = get_db_connection()
         cursor = conn.cursor()
-
         cursor.execute("""
             INSERT INTO orders (user_id, total_amount, delivery_address, payment_status)
             VALUES (?, ?, ?, ?)
         """, (user_id, total_amount, delivery_address, "paid"))
-
         order_id = cursor.lastrowid
 
         for item in items:
@@ -356,12 +365,17 @@ def checkout():
         return jsonify({"success": False, "message": "Server error."}), 500
 
 
-@app.route("/orders/<int:user_id>", methods=["GET"])
-def get_orders(user_id):
+# ✅ FIX 1: Orders route no longer exposes user_id in URL
+# User can only see their own orders via session
+@app.route("/orders", methods=["GET"])
+def get_orders():
+    user_id = get_current_user()
+    if not user_id:
+        return jsonify({"success": False, "message": "Not authenticated. Please log in."}), 401
+
     try:
         conn = get_db_connection()
         cursor = conn.cursor()
-
         cursor.execute("""
             SELECT id, total_amount, delivery_address, payment_status, created_at
             FROM orders
@@ -378,7 +392,6 @@ def get_orders(user_id):
                 WHERE order_id = ?
             """, (order["id"],))
             items = cursor.fetchall()
-
             result.append({
                 "order_id": order["id"],
                 "total_amount": order["total_amount"],
@@ -402,7 +415,22 @@ def get_orders(user_id):
         return jsonify({"success": False, "message": "Server error."}), 500
 
 
+# ✅ NEW: Logout route — clears the session
+@app.route("/logout", methods=["POST"])
+def logout():
+    session.clear()
+    return jsonify({"success": True, "message": "Logged out successfully."}), 200
+
+
+# ✅ NEW: Clean 404 handler
+@app.errorhandler(404)
+def not_found(e):
+    return jsonify({"success": False, "message": "Page not found."}), 404
+
+
 init_db()
 
 if __name__ == "__main__":
-    app.run(debug=True)
+    # ✅ Never run debug=True in production
+    debug_mode = os.getenv("FLASK_DEBUG", "false").lower() == "true"
+    app.run(debug=debug_mode)
